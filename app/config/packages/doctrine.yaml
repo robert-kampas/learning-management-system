@@ -17,8 +17,6 @@ doctrine:
         profiling: '%kernel.debug%'
         profiling_collect_backtrace: '%kernel.debug%'
         profiling_collect_schema_errors: '%kernel.debug%'
-        use_savepoints: true
-        disable_type_comments: false
         keep_replica: false
         options:
             3: 2 # this option tells PDO to throw exceptions for errors, which is generally recommended for better error handling
@@ -26,10 +24,6 @@ doctrine:
             1003: true # this enables compression in client/server protocol
     orm:
         default_entity_manager: default
-        auto_generate_proxy_classes: true
-        proxy_dir: '%kernel.build_dir%/doctrine/orm/Proxies'
-        proxy_namespace: Proxies
-        enable_lazy_ghost_objects: true
         enable_native_lazy_objects: true
         validate_xml_mapping: true
         naming_strategy: doctrine.orm.naming_strategy.underscore_number_aware
