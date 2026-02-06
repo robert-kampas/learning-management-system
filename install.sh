@@ -19,6 +19,8 @@ docker compose up -d
 echo "Waiting for container..."
 sleep 5
 
+docker exec learning-management-system cp .env.dist .env
+
 echo "Installing dependencies..."
 docker exec learning-management-system composer install --optimize-autoloader --no-interaction --prefer-dist
 
