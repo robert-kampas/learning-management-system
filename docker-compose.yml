@@ -1,7 +1,10 @@
 services:
   web:
     container_name: learning-management-system
-    image: learning-management-system
+    image: rkampas/learning-management-system:latest
+    #image: learning-management-system
+    ports:
+      - "8889:80"
     network_mode: bridge
     volumes:
       - ./app:/var/www
@@ -11,8 +14,6 @@ services:
       - database:database
     environment:
       - VIRTUAL_HOST=learning-management-system.docker
-      - APP_ENV=dev
-      - APP_DEBUG=1
       - DATABASE_HOST=database
       - DATABASE_USER=user
       - DATABASE_PASSWORD=password
