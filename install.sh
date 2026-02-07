@@ -24,11 +24,7 @@ docker exec learning-management-system cp .env.dist .env
 echo "Installing dependencies..."
 docker exec learning-management-system composer install --optimize-autoloader --no-interaction --prefer-dist
 
-echo "Clearing Symfony cache..."
-docker exec learning-management-system php bin/console cache:clear --no-warmup
-docker exec learning-management-system php bin/console cache:warmup
-
-echo "✓ Setup complete\n\n"
+printf "\033[1;32m✓ Install complete\033[0m\n\n"
 
 # Get server IP
 CONTAINER_IP=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' learning-management-system)
