@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
-use App\Enum\ProgressType;
+use App\Enum\ProgressLogType;
 use App\Repository\ProgressLogRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
@@ -20,13 +20,13 @@ class ProgressLog
     #[ORM\Column(type: Types::TEXT, length: 65535)]
     private string $moduleName;
 
-    #[ORM\Column(enumType: ProgressType::class)]
-    private ProgressType $status;
+    #[ORM\Column(enumType: ProgressLogType::class)]
+    private ProgressLogType $status;
 
     #[ORM\Column(type: Types::INTEGER, options: ['unsigned' => true])]
     private int $score = 0;
 
-    #[ORM\ManyToOne(targetEntity: Enrolment::class, inversedBy: 'progressLogs')]
+    #[ORM\ManyToOne(targetEntity: Enrolment::class, fetch: 'EXTRA_LAZY', inversedBy: 'progressLogs')]
     #[ORM\JoinColumn(nullable: false)]
     private Enrolment $enrolment;
 
@@ -47,12 +47,12 @@ class ProgressLog
         return $this;
     }
 
-    public function getStatus(): ProgressType
+    public function getStatus(): ProgressLogType
     {
         return $this->status;
     }
 
-    public function setStatus(ProgressType $status): self
+    public function setStatus(ProgressLogType $status): self
     {
         $this->status = $status;
 

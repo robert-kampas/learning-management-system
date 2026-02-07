@@ -9,15 +9,18 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Bridge\Doctrine\IdGenerator\UuidGenerator;
+use Symfony\Bridge\Doctrine\Types\UuidType;
+use Symfony\Component\Uid\UuidV7;
 
 #[ORM\Entity(repositoryClass: CourseRepository::class)]
 class Course
 {
     #[ORM\Id]
+    #[ORM\Column(type: UuidType::NAME, unique: true)]
     #[ORM\GeneratedValue(strategy: 'CUSTOM')]
-    #[ORM\CustomIdGenerator(class: 'doctrine.ulid_generator')]
-    #[ORM\Column(type: 'string', length: 26, unique: true, options: ['fixed' => true, 'collation' => 'ascii_bin'])]
-    private string $id;
+    #[ORM\CustomIdGenerator(class: UuidGenerator::class)]
+    private UuidV7 $id;
 
     #[ORM\Column(type: Types::STRING, length: 255)]
     private string $title;
@@ -28,7 +31,7 @@ class Course
     /**
      * @var Collection<int, Enrolment>
      */
-    #[ORM\OneToMany(targetEntity: Enrolment::class, mappedBy: 'enrolledAt', orphanRemoval: true)]
+    #[ORM\OneToMany(targetEntity: Enrolment::class, mappedBy: 'enrolledAt', fetch: 'EXTRA_LAZY' ,orphanRemoval: true)]
     private Collection $enrolments;
 
     public function __construct()
@@ -36,7 +39,7 @@ class Course
         $this->enrolments = new ArrayCollection();
     }
 
-    public function getId(): string
+    public function getId(): UuidV7
     {
         return $this->id;
     }

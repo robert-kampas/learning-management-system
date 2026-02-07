@@ -24,14 +24,14 @@ class Enrolment
     #[ORM\Column(type: Types::TEXT, length: 65535)]
     private string $studentEmail;
 
-    #[ORM\ManyToOne(targetEntity: Course::class, inversedBy: 'enrolments')]
+    #[ORM\ManyToOne(targetEntity: Course::class, fetch: 'EXTRA_LAZY', inversedBy: 'enrolments')]
     #[ORM\JoinColumn(nullable: false)]
     private Course $enrolledAt;
 
     /**
      * @var Collection<int, ProgressLog>
      */
-    #[ORM\OneToMany(targetEntity: ProgressLog::class, mappedBy: 'enrolment', orphanRemoval: true)]
+    #[ORM\OneToMany(targetEntity: ProgressLog::class, mappedBy: 'enrolment', fetch: 'EXTRA_LAZY', orphanRemoval: true)]
     private Collection $progressLogs;
 
     public function __construct()

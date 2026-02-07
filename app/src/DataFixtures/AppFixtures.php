@@ -7,7 +7,7 @@ namespace App\DataFixtures;
 use App\Entity\Course;
 use App\Entity\Enrolment;
 use App\Entity\ProgressLog;
-use App\Enum\ProgressType;
+use App\Enum\ProgressLogType;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Persistence\ObjectManager;
 use Faker\Factory as FakerFactory;
@@ -35,7 +35,7 @@ final class AppFixtures extends Fixture
                     $progressLog = new ProgressLog();
                     $progressLog->setEnrolment($enrolment);
                     $progressLog->setModuleName($faker->text(50));
-                    $progressLog->setStatus(rand(0, 1) ? ProgressType::STARTED : ProgressType::COMPLETED);
+                    $progressLog->setStatus(rand(0, 1) ? ProgressLogType::STARTED : ProgressLogType::COMPLETED);
                     $progressLog->setScore(rand(0, 1000));
                     $progressLog->setEnrolment($enrolment);
 
