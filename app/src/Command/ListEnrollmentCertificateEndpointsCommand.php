@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Command;
 
-use App\Repository\CourseRepository;
+use App\Repository\EnrolmentRepository;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -12,11 +12,11 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
-#[AsCommand(name: 'app:list-course-report-urls')]
-final class ListCourseReportsEndpointsCommand extends Command
+#[AsCommand(name: 'app:list-enrollment-certificate-urls')]
+final class ListEnrollmentCertificateEndpointsCommand extends Command
 {
     public function __construct(
-        private readonly CourseRepository $courseRepository,
+        private readonly EnrolmentRepository   $enrolmentRepository,
         private readonly UrlGeneratorInterface $urlGenerator
     ) {
         parent::__construct();
@@ -25,11 +25,11 @@ final class ListCourseReportsEndpointsCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
-        $allCourses = $this->courseRepository->findAll();
+        $someEnrollments = $this->enrolmentRepository->findBy([], [], 5);
 
-        foreach ($allCourses as $course) {
-            $courseReportUrl = sprintf('http://0.0.0.0:8889%s', $this->urlGenerator->generate('course_report', ['id' => $course->getId()]));
-            $io->block($courseReportUrl, 'GET', 'fg=green', '');
+        foreach ($someEnrollments as $enrollment) {
+            $courseReportUrl = sprintf('http://0.0.0.0:8889%s', $this->urlGenerator->generate('generate_enrollment_certificate', ['id' => $enrollment->getId()]));
+            $io->block($courseReportUrl, 'POST', 'fg=green', '');
         }
 
         return Command::SUCCESS;
