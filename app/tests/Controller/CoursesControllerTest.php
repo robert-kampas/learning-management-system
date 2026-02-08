@@ -4,95 +4,95 @@ declare(strict_types=1);
 
 namespace App\Tests\Controller;
 
+use App\Repository\CourseRepository;
+use App\Repository\ProgressLogRepository;
+use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
-use Doctrine\ORM\EntityManagerInterface;
 use App\Entity\Course;
 use App\Repository\EnrolmentRepository;
-use App\Repository\ProgressLogRepository;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\Routing\Requirement\Requirement;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 final class CoursesControllerTest extends WebTestCase
 {
-    private EntityManagerInterface $em;
+    private readonly CourseRepository $courseRepository;
+    private readonly EnrolmentRepository $enrolmentRepository;
+    private readonly ProgressLogRepository $progressLogRepository;
+    private readonly UrlGeneratorInterface $urlGenerator;
+    private readonly KernelBrowser $client;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->em = self::getContainer()->get(EntityManagerInterface::class);
-        $this->em->beginTransaction();
-    }
 
-    protected function tearDown(): void
-    {
-        $this->em->rollback();
-        parent::tearDown();
+        $this->client = static::createClient();
+
+        $this->courseRepository = self::getContainer()->get(CourseRepository::class);
+        $this->enrolmentRepository = self::getContainer()->get(EnrolmentRepository::class);
+        $this->progressLogRepository = self::getContainer()->get(ProgressLogRepository::class);
+        $this->urlGenerator = self::getContainer()->get(UrlGeneratorInterface::class);
     }
 
     public function testGetCourseReportReturnsExpectedJsonStructure(): void
     {
-        $course = new Course();
-        $course->setTitle('PHP for Beginners');
+        /** @var Course|null $randomCourse */
+        $randomCourse = $this->courseRepository->findOneBy([], ['id' => 'ASC']);
+        $courseEnrollments = $this->enrolmentRepository->findBy(['enrolledAt' => $randomCourse]);
 
-        $enrolment1 = new Enrolment();
-        $enrolment1->setStudentName('Alice Smith');
-        $enrolment1->setStudentEmail('alice@example.com');
-        $enrolment1->setCourse($course);           // assuming setter exists
+        $this->assertGreaterThan(0, count($courseEnrollments), 'This course has no enrollments. Cannot proceed with the unit test. Please check your data and try again.');
+        $this->assertInstanceOf(Course::class, $randomCourse);
 
-        $enrolment2 = new Enrolment();
-        $enrolment2->setStudentName('Bob Jones');
-        $enrolment2->setStudentEmail('bob@example.com');
-        $enrolment2->setCourse($course);
-
-        $log1 = new ProgressLog();
-        $log1->setEnrolment($enrolment1);
-        $log1->setModuleName('Introduction');
-        $log1->setStatus(ProgressStatus::COMPLETED);
-        $log1->setScore(92);
-
-        $log2 = new ProgressLog();
-        $log2->setEnrolment($enrolment1);
-        $log2->setModuleName('Basics');
-        $log2->setStatus(ProgressStatus::IN_PROGRESS);
-        $log2->setScore(45);
-
-        $this->em->persist($course);
-        $this->em->persist($enrolment1);
-        $this->em->persist($enrolment2);
-        $this->em->persist($log1);
-        $this->em->persist($log2);
-        $this->em->flush();
-
-        $client = static::createClient();
-        $client->request(
-            'GET',
-            '/api/v1/courses/' . $course->getId() . '/report'
-        );
+        $courseReportUrl = $this->urlGenerator->generate('course_report', ['id' => $randomCourse->getId()]);
+        dump("Running integration test for: $courseReportUrl");
+        $this->client->request('GET', $courseReportUrl);
 
         $this->assertResponseIsSuccessful();
         $this->assertResponseHeaderSame('Content-Type', 'application/json');
-        $this->assertJson($client->getResponse()->getContent());
+        $this->assertJson($this->client->getResponse()->getContent());
 
-        $data = json_decode($client->getResponse()->getContent(), true);
+        $data = json_decode($this->client->getResponse()->getContent(), true, 6, JSON_THROW_ON_ERROR);
 
-        $this->assertEquals('PHP for Beginners', $data['course_title']);
-        $this->assertCount(2, $data['enrolled_students']);
+        $this->assertEquals($randomCourse->getTitle(), $data['course_title']);
+        $this->assertIsArray($data['enrolled_students']);
 
-        // Check first student (ordered by id ASC)
-        $student1 = $data['enrolled_students'][0];
-        $this->assertEquals('Alice Smith', $student1['name']);
-        $this->assertEquals('alice@example.com', $student1['email']);
-        $this->assertCount(2, $student1['progress_logs']);
+        $actualEnrollmentObject = null;
+        $actualFirstEnrollment = $data['enrolled_students'][0];
+        $actualEnrollmentId = $actualFirstEnrollment['id'] ?? false;
+        $actualEnrollmentName = $actualFirstEnrollment['name'] ?? false;
+        $actualEnrollmentEmail = $actualFirstEnrollment['email'] ?? false;
 
-        $this->assertEquals('Introduction', $student1['progress_logs'][0]['module_name']);
-        $this->assertEquals('COMPLETED',   $student1['progress_logs'][0]['status']);
-        $this->assertEquals(92,            $student1['progress_logs'][0]['score']);
+        foreach ($courseEnrollments as $courseEnrollment) {
+            if ($courseEnrollment->getId() === $actualEnrollmentId) {
+                $actualEnrollmentObject = $courseEnrollment;
+            }
+        }
 
-        // Second student → no logs
-        $student2 = $data['enrolled_students'][1];
-        $this->assertEquals('Bob Jones', $student2['name']);
-        $this->assertCount(0, $student2['progress_logs']);
+        $this->assertNotNull($actualEnrollmentObject, 'Unable to find matching first enrolment entity.');
+        $this->assertEquals($actualEnrollmentId, $actualEnrollmentObject->getId());
+        $this->assertEquals($actualEnrollmentName, $actualEnrollmentObject->getStudentName());
+        $this->assertEquals($actualEnrollmentEmail, $actualEnrollmentObject->getStudentEmail());
+
+        $enrolmentProgressLogs = $this->progressLogRepository->findBy(['enrolment' => $actualEnrollmentObject]);
+        $this->assertGreaterThan(0, count($enrolmentProgressLogs), 'This enrolment has no progress logs. Cannot proceed with the unit test. Please check your data and try again.');
+
+        $this->assertIsArray($actualFirstEnrollment['progress_logs']);
+        $actualFirstProgressLogObject = null;
+        $actualFirstProgressLog = $actualFirstEnrollment['progress_logs'][0];
+        $actualFirstProgressLogId = $actualFirstProgressLog['id'] ?? false;
+        $actualFirstProgressLogModuleName = $actualFirstProgressLog['module_name'] ?? false;
+        $actualFirstProgressLogScore = $actualFirstProgressLog['score'] ?? false;
+        $actualFirstProgressLogStatus = $actualFirstProgressLog['status'] ?? false;
+
+        foreach ($enrolmentProgressLogs as $enrolmentProgressLog) {
+            if ($enrolmentProgressLog->getId() === $actualFirstProgressLogId) {
+                $actualFirstProgressLogObject = $enrolmentProgressLog;
+            }
+        }
+
+        $this->assertNotNull($actualFirstProgressLogObject, 'Unable to find matching first progress log entity.');
+        $this->assertSameSize($actualFirstEnrollment['progress_logs'], $enrolmentProgressLogs);
+        $this->assertEquals($actualFirstProgressLogId, $actualFirstProgressLogObject->getId());
+        $this->assertEquals($actualFirstProgressLogModuleName, $actualFirstProgressLogObject->getModuleName());
+        $this->assertEquals($actualFirstProgressLogScore, $actualFirstProgressLogObject->getScore());
+        $this->assertEquals($actualFirstProgressLogStatus, $actualFirstProgressLogObject->getStatus()->value);
     }
 }
