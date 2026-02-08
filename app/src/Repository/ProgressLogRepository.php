@@ -17,4 +17,26 @@ final class ProgressLogRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, ProgressLog::class);
     }
+
+    /**
+     * Returns all Progress Logs for the given enrolment IDs.
+     *
+     * @param int[] $enrolmentsIds
+     *
+     * @return ProgressLog[]
+     */
+    public function findByEnrolments(array $enrolmentsIds): array
+    {
+        if ($enrolmentsIds === []) {
+            return [];
+        }
+
+        return $this->createQueryBuilder('pl')
+            ->select('pl', 'en')
+            ->innerJoin('pl.enrolment', 'en')
+            ->where('en.id IN (:enrolmentsIds)')
+            ->setParameter('enrolmentsIds', $enrolmentsIds)
+            ->getQuery()
+            ->getResult();
+    }
 }

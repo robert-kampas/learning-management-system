@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Entity\Course;
+use App\Entity\Enrolment;
 use App\Repository\EnrolmentRepository;
 use App\Repository\ProgressLogRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -23,7 +24,14 @@ final class CoursesController extends AbstractController
     ): JsonResponse
     {
         $courseEnrolments = $enrolmentRepository->findBy(['enrolledAt' => $course], ['id' => 'ASC']);
-        $enrolmentsProgressLogs = $progressLogRepository->findBy(['enrolment' => $courseEnrolments]);
+
+        /**
+         * I think this would cause N+1 problem in disguise, so I will use custom repository method instead.
+         */
+        //$enrolmentsProgressLogs = $progressLogRepository->findBy(['enrolment' => $courseEnrolments]);
+
+        $courseEnrolmentsIds = array_map(fn(Enrolment $enrolment): int => $enrolment->getId(), $courseEnrolments);
+        $enrolmentsProgressLogs = $progressLogRepository->findByEnrolments($courseEnrolmentsIds);
 
         // group progress logs by enrolment Id
         $progressLogsByEnrolment = [];
