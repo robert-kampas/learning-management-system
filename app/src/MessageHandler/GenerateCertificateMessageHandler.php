@@ -28,14 +28,14 @@ final readonly class GenerateCertificateMessageHandler
         }
 
         $this->generatePdf();
-        $certificationHash = hash('sha256', $enrollment->getId() . microtime());
+        $certificateHash = hash('sha256', $enrollment->getId() . microtime());
 
-        $enrollment->setCertificationHash($certificationHash);
+        $enrollment->setCertificateHash($certificateHash);
         $this->entityManager->flush();
 
-        $this->logger->info('Certificate generated', [
+        $this->logger->info('Certificate generated successfully.', [
             'enrollment_id' => $enrollment->getId(),
-            'certificate_hash' => $certificationHash
+            'certificate_hash' => $certificateHash
         ]);
     }
 

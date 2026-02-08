@@ -34,8 +34,8 @@ class Enrolment
     #[ORM\OneToMany(targetEntity: ProgressLog::class, mappedBy: 'enrolment', fetch: 'EXTRA_LAZY', orphanRemoval: true)]
     private Collection $progressLogs;
 
-    #[ORM\Column(type: Types::STRING, options: ['collation' => 'ascii_bin'])]
-    private ?string $certificationHash = null;
+    #[ORM\Column(type: Types::STRING, nullable: true, options: ['collation' => 'ascii_bin'])]
+    private ?string $certificateHash = null;
 
     public function __construct()
     {
@@ -108,14 +108,14 @@ class Enrolment
         return $this;
     }
 
-    public function getCertificationHash(): ?string
+    public function getCertificateHash(): ?string
     {
-        return $this->certificationHash;
+        return $this->certificateHash;
     }
 
-    public function setCertificationHash(?string $certificationHash): self
+    public function setCertificateHash(?string $certificateHash): self
     {
-        $this->certificationHash = $certificationHash;
+        $this->certificateHash = $certificateHash;
 
         return $this;
     }
