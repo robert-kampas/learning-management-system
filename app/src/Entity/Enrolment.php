@@ -34,6 +34,9 @@ class Enrolment
     #[ORM\OneToMany(targetEntity: ProgressLog::class, mappedBy: 'enrolment', fetch: 'EXTRA_LAZY', orphanRemoval: true)]
     private Collection $progressLogs;
 
+    #[ORM\Column(type: Types::STRING, options: ['collation' => 'ascii_bin'])]
+    private ?string $certificationHash = null;
+
     public function __construct()
     {
         $this->progressLogs = new ArrayCollection();
@@ -101,6 +104,18 @@ class Enrolment
     public function removeProgressLog(ProgressLog $progressLog): self
     {
         $this->progressLogs->removeElement($progressLog);
+
+        return $this;
+    }
+
+    public function getCertificationHash(): ?string
+    {
+        return $this->certificationHash;
+    }
+
+    public function setCertificationHash(?string $certificationHash): self
+    {
+        $this->certificationHash = $certificationHash;
 
         return $this;
     }
