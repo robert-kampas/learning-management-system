@@ -12,6 +12,11 @@ final class GenerateCertificateMessageHandler
 {
     public function __invoke(GenerateCertificateMessage $message): void
     {
-        // do something with your message
+        $this->generatePdf();
+    }
+
+    private function generatePdf(): void
+    {
+        sleep(10);
     }
 }
