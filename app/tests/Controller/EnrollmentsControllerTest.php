@@ -15,32 +15,32 @@ final class EnrollmentsControllerTest extends WebTestCase
     public function testGenerateEnrollmentCertificateDispatchesMessage(): void
     {
         $client = static::createClient();
-        $em = static::getContainer()->get('doctrine')->getManager();
+        $entityManager = static::getContainer()->get('doctrine')->getManager();
 
+        // create test data
         $course = new Course();
         $course->setTitle('Excepturi aut adipisci voluptates eius hic.');
+        $entityManager->persist($course);
 
         $enrolment = new Enrolment();
         $enrolment->setStudentEmail('ressie21@yahoo.com');
         $enrolment->setStudentName('Adeline Stehr');
         $enrolment->setEnrolledAt($course);
+        $entityManager->persist($enrolment);
 
-        $em->persist($course);
-        $em->persist($enrolment);
-        $em->flush();
+        $entityManager->flush();
 
-        $requestUrl = sprintf('/api/v1/enrollments/%s/certificate', $enrolment->getId());
-        dump("Testing $requestUrl");
-        $client->request('POST', $requestUrl);
+        // make request
+        $client->request('POST', sprintf('/api/v1/enrollments/%s/certificate', $enrolment->getId()));
 
-        // Assert response
+        // assert response
         $this->assertResponseStatusCodeSame(202);
         $this->assertResponseHeaderSame('Content-Type', 'application/json');
 
         $data = json_decode($client->getResponse()->getContent(), true);
         $this->assertEmpty($data);
 
-        // Assert message was dispatched
+        // assert message was dispatched
         /** @var InMemoryTransport $transport */
         $transport = static::getContainer()->get('messenger.transport.async');
         $messages = $transport->getSent();
@@ -54,9 +54,7 @@ final class EnrollmentsControllerTest extends WebTestCase
     {
         $client = static::createClient();
 
-        $requestUrl = '/api/v1/enrollments/999999/certificate';
-        dump("Testing $requestUrl");
-        $client->request('POST', $requestUrl);
+        $client->request('POST', '/api/v1/enrollments/999999/certificate');
 
         $this->assertResponseStatusCodeSame(404);
     }
